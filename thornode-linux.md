@@ -10,54 +10,60 @@ All commands are meant to be run as root user unless specified otherwise. Depend
 
 Install all needed packages for building and configuring the THORNode daemon:
 
-`sudo apt install -y --no-install-recommends aria2 ca-certificates curl git golang jq make pv gawk`
+```bash
+sudo apt install -y --no-install-recommends aria2 ca-certificates curl git golang jq make pv gawk build-essential libssl-dev pkg-config libclang-dev cmake rustc cargo
+```
 
 ## Application user
 
-Add the application user that is used to run the THORNode application:
+Add the application user that is used to run the THORNode application and switch to it:
 
-`sudo useradd -m thornode -s /bin/bash`
+```bash
+sudo useradd -m thornode -s /bin/bash
+sudo su - thornode
+```
 
 ## Build
 Checkout the latest code and build the binary.
 
-Become thornode user:
+Download the THORNode source code at release tag v3.8.0 into a new folder called build inside the thornode user’s 
+home directory (/home/thornode/build).  
 
-`sudo -iu thornode`
-
-Download the THORNode source code at release tag v2.135.1 into a new folder called build inside the thornode user’s home directory (/home/thornode/build). Using --branch pins you to that exact version instead of whatever is on main.
+Using --branch pins you to that exact version instead of whatever is on main.
 
 ```bash
-git clone --branch v2.135.1 https://gitlab.com/thorchain/thornode $HOME/build
+git clone --branch v3.8.0 https://gitlab.com/thorchain/thornode $HOME/build
+cd $HOME/build
 ```
-`cd $HOME/build`
 
-> **Note**  
-> THORNode’s Makefile checks for a docker binary even though Docker isn’t required to build the Go code. This link satisfies the check without pulling in Docker..
-
-Create a fake docker executable in the current directory by symlinking it to /usr/bin/true (a no-op that exits 0). 
-
-```bash
-ln -fs /usr/bin/true docker
+NO LONGER NEEDED WITH CGO?
+The THORNode build process requires a specific version of the CosmWasm/wasmd module:
 ```
-Prepend the current directory to PATH so the newly-created fake docker (and any other helper scripts in the repo) are found before system binaries during the build.
-```bash
-export PATH=$(pwd):$PATH
+go mod edit -replace github.com/CosmWasm/wasmd=github.com/CosmWasm/wasmd@v0.53.4
+go mod tidy
 ```
-Invoke the Makefile’s install target with TAG=mainnet. The variable stamps the binary with the “mainnet” build tag and places the compiled thornode executable into $HOME/go/bin/.
+Docker work-around:
 ```bash
-TAG=mainnet make install
-```
-Remove bifrost binary (Bifrost is the signer-bridge used by validator nodes to talk to their Yggdrasil wallets; a 
-“full-node / observer” machine doesn’t need it):
-
-`rm $HOME/go/bin/bifrost`
-
-Return to home and remove build directory:
-```bash
+ln -fs /usr/bin/true docker; export PATH=$(pwd):$PATH; CGO_ENABLED=1 TAG=mainnet make install
+# remove bifrost binary and build directory
+rm $HOME/go/bin/bifrost
 cd
 rm -rf $HOME/build
-````
+```
+
+> **Note**  
+> THORNode’s Makefile checks for a docker binary even though Docker isn’t required to build the Go code. This link satisfies the check without pulling in Docker.
+
+`export PATH=$(pwd):$PATH`: Prepend the current directory to PATH so the newly-created fake docker (and any other 
+helper scripts in the repo) are found before system binaries during the build.
+
+`TAG=mainnet make install`: Invoke the Makefile’s install target with TAG=mainnet. The variable stamps the binary with the “mainnet” build tag and places the compiled thornode executable into $HOME/go/bin/.
+
+`rm $HOME/go/bin/bifrost`: Remove bifrost binary (Bifrost is the signer-bridge used by validator nodes to talk to 
+their Yggdrasil wallets; a 
+“full-node / observer” machine doesn’t need it):
+
+`rm -rf $HOME/build`: Remove build directory:
 
 ## Prepare environment
 
@@ -65,7 +71,9 @@ rm -rf $HOME/build
 
 Create the configuration files and directory layout:  
 
-`$HOME/go/bin/thornode init thornode --overwrite --chain-id thorchain-1`
+```bash
+$HOME/go/bin/thornode init thornode --overwrite --chain-id thorchain-1
+```
 
 **Initialize the node’s data directory**
 
@@ -141,7 +149,9 @@ aria2c --split=16 --max-concurrent-downloads=16 --max-connection-per-server=16 \
 
 Remove any **stale chain data** before you unpack the fresh snapshot:
 
-`rm -rf $HOME/.thornode/data/{*.db,snapshot,cs.wal}`
+```bash
+rm -rf $HOME/.thornode/data/{*.db,snapshot,cs.wal}
+```
 
 * **`*.db`** – deletes existing LevelDB databases (`application.db`, `state.db`, `evidence.db`, …)  
 * **`snapshot/`** – removes any incomplete or outdated snapshot directory  
@@ -150,7 +160,9 @@ Remove any **stale chain data** before you unpack the fresh snapshot:
 
 Stream-extract the snapshot with a progress bar (leave out `--exclude "*_state.json` flag to prevent syncing error):
 
-`pv $HOME/.thornode/$FILENAME | tar -xzf - -C $HOME/.thornode`
+```
+pv $HOME/.thornode/$FILENAME | tar -xzf - -C $HOME/.thornode
+```
 
 * **`pv …`** – streams the file through *Pipe Viewer*, showing real-time progress and speed.  
 * **`tar -xzf -`** – reads the snapshot from standard input (`f -`), un-gzips (`z`) and extracts (`x`) it.  
@@ -159,7 +171,9 @@ Stream-extract the snapshot with a progress bar (leave out `--exclude "*_state.j
 
 Delete the now-unneeded snapshot archive to free disk space:
 
-`rm -rf $HOME/.thornode/$FILENAME`
+```bash
+rm -rf $HOME/.thornode/$FILENAME
+```
 
 Set a non-zero minimum gas price:
 
