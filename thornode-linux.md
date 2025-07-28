@@ -36,12 +36,6 @@ git clone --branch v3.8.0 https://gitlab.com/thorchain/thornode $HOME/build
 cd $HOME/build
 ```
 
-NO LONGER NEEDED WITH CGO?
-The THORNode build process requires a specific version of the CosmWasm/wasmd module:
-```
-go mod edit -replace github.com/CosmWasm/wasmd=github.com/CosmWasm/wasmd@v0.53.4
-go mod tidy
-```
 Docker work-around:
 ```bash
 ln -fs /usr/bin/true docker; export PATH=$(pwd):$PATH; CGO_ENABLED=1 TAG=mainnet make install
@@ -181,7 +175,7 @@ Set a non-zero minimum gas price:
 
 Change `minimum-gas-prices = "0stake"` to `minimum-gas-prices = "0.03rune"`
 
-## Edit $HOME/.thornode/config/config.toml
+## Edit `$HOME/.thornode/config/config.toml`
 
 Under `[statesync]` set: 
 
@@ -192,7 +186,7 @@ Under `[statesync]` set:
 Become primary user:
 `exit`
 
-## Systemd [maybe this file need revision...]
+## Systemd [this file may need revision...]
 
 Create a service file so you can manage the Thornode process via systemd:
 
@@ -238,6 +232,7 @@ sudo systemctl start thornode.service
 ```
 
 ## Configure UFW firewall
+
 ### Install ufw if not present
 `sudo apt install -y ufw`
 
