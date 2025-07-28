@@ -179,13 +179,14 @@ Set a non-zero minimum gas price:
 
 `nano $HOME/.thornode/config/app.toml`
 
-Change `minimum-gas-prices = ""` to `minimum-gas-prices = "0.03rune"`
+Change `minimum-gas-prices = "0stake"` to `minimum-gas-prices = "0.03rune"`
 
-## Edit $HOME.thornode/config/config.toml
+## Edit $HOME/.thornode/config/config.toml
 
 Under `[statesync]` set: 
-`enable = true`
-`rpc_servers  = "https://rpc.ninerealms.com:443,https://thornode.ninerealms.com:443"`
+
+`enable = true`  
+`rpc_servers  = "https://rpc.ninerealms.com:443,https://thornode.ninerealms.com:443"`  
 `trust_hash = "4D1B2804A6796B7930AABFD5E8573980A7F8CC79269907C6DB29449918A05109"`
 
 Become primary user:
@@ -220,15 +221,21 @@ WantedBy=multi-user.target
 
 Reload systemd configuration:
 
-`sudo systemctl daemon-reload`
+```bash
+sudo systemctl daemon-reload
+```
 
 Enable service:
 
-`sudo systemctl enable thornode`
+```bash
+sudo systemctl enable thornode
+```
 
 Start service:
 
-`sudo systemctl start thornode.service`
+```bash
+sudo systemctl start thornode.service
+```
 
 ## Configure UFW firewall
 ### Install ufw if not present
